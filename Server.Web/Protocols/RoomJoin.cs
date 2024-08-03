@@ -11,7 +11,7 @@ public partial class GameHub
         // >=1 for players.
         // Negative UserId indicates an invalid room code (not multicast)
 
-        var roomCode = data.RoomCode;
+        var roomCode = data.RoomCode.ToUpper();
         var username = data.Username;
 
         var id = await lobby.AddPlayerToGameAsync(Context, roomCode, username);

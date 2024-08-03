@@ -75,7 +75,7 @@ public class Game
 
     public string GenerateInviteCode()
     {
-        const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         var random = new Random();
 
