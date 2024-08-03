@@ -1,5 +1,4 @@
 ﻿using AspNetCoreRateLimit;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
@@ -57,7 +56,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
             }
         );
 
-        builder.WebHost.UseUrls("http://localhost:6783").UseKestrel();
+        builder.WebHost.UseKestrel();
     }
 
     public override void PostWebBuild(WebApplication app)
