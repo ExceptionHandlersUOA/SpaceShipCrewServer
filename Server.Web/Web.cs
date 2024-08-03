@@ -33,7 +33,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         services.AddHttpClient(string.Empty, client =>
         {
-            client.BaseAddress = new Uri("https://hackathon.feroxfoxxo.com/ws");
+            client.BaseAddress = new Uri("http://localhost:6783/ws");
         });
     }
 
@@ -57,7 +57,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
             }
         );
 
-        builder.WebHost.UseKestrel().ConfigureKestrel(o => o.ListenAnyIP(6783));
+        builder.WebHost.UseUrls("http://localhost:6783").UseKestrel();
     }
 
     public override void PostWebBuild(WebApplication app)
