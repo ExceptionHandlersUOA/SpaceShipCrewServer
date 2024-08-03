@@ -69,7 +69,14 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         app.MapHub<GameHub>("/hub");
 
-        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().SetIsOriginAllowedToAllowWildcardSubdomains().WithOrigins(["localhost", "*.feroxfoxxo.com"]));
+        app.UseCors(config =>
+            config.SetIsOriginAllowedToAllowWildcardSubdomains()
+                .WithOrigins("https://*.feroxfoxxo.com", "http://localhost:3000")
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .AllowAnyHeader()
+                .Build()
+        );
 
         app.UseIpRateLimiting();
     }
