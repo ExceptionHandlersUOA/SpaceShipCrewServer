@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Server.Base.Timers.Extensions;
 using Server.Base.Timers.Services;
 using Server.Web.Configs;
+using Server.Web.Enums;
 using Server.Web.Models;
 using Server.Web.Protocols;
 using System.Collections.Concurrent;
@@ -21,6 +22,8 @@ public class Game
     private readonly CancellationTokenSource _completedCts = new();
 
     public ResourcesModel Resources = new ();
+
+    public bool GameReady = false;
 
     public StateModel StateModel => new ()
     {
@@ -136,7 +139,9 @@ public class Game
                 if (!_playerSlots.Reader.TryPeek(out _))
                 {
                     waitingForPlayers = false;
-                    await Group.GameReady();
+
+                    GameReady = false;
+                    CheckGameReady();
                 }
             }
 
@@ -147,6 +152,12 @@ public class Game
         }
 
         return false;
+    }
+
+    public void CheckGameReady()
+    {
+        if (GameReady && !ConnectionToPlayer.Values.Any(p => p.Role == Role.Unknown))
+            Group.GameReady();
     }
 
     public async Task RemovePlayerAsync(string connectionId)
@@ -160,6 +171,8 @@ public class Game
         if (ConnectionToId.TryGetValue(connectionId, out var playerId))
         {
             ConnectionToId.Remove(connectionId, out var _);
+
+            GameReady = false;
 
             await Group.GameNotReady();
 
