@@ -79,7 +79,7 @@ public class Game
 
         var random = new Random();
 
-        var code = new string(Enumerable.Repeat(alphabet, _config.MaxPlayersPerGame)
+        var code = new string(Enumerable.Repeat(alphabet, _config.InviteLength)
             .Select(s => s[random.Next(s.Length)]).ToArray());
 
         return _lobby.ActiveGames.ContainsKey(code) ? GenerateInviteCode() :
