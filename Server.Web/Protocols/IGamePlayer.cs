@@ -19,4 +19,7 @@ public interface IGamePlayer
 
     // State has been updated, new state is sent to client
     Task State(StateModel state);
+
+    // Sent when all resources are depleted
+    Task GameEnd();
 }

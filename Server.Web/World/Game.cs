@@ -222,11 +222,14 @@ public class Game
 
     public async Task EndGame()
     {
-        foreach (var (_, player) in ConnectionToPlayer)
-            await player.Proxy.WriteMessage("Game has been completed!");
+        await Group.WriteMessage("Game has been completed!");
+
+        await Group.GameEnd();
 
         _logger.LogInformation("The game {Name} has finished.", RoomCode);
 
         _completedCts.Cancel();
+
+        _lobby.ActiveGames.TryRemove(RoomCode, out var _);
     }
 }
