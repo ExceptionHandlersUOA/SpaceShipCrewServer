@@ -57,7 +57,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
             }
         );
 
-        builder.WebHost.UseUrls("http://localhost:6783").UseKestrel().ConfigureKestrel(o => o.ListenAnyIP(6783));
+        builder.WebHost.UseKestrel().ConfigureKestrel(o => o.ListenAnyIP(6783));
     }
 
     public override void PostWebBuild(WebApplication app)
