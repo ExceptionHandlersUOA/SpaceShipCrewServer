@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Server.Base.Core.Abstractions;
+using Server.Base.Core.Events;
 using Server.Base.Core.Models;
 using Server.Base.Timers.Extensions;
 using Server.Base.Timers.Services;
@@ -12,22 +13,21 @@ namespace Server.Base.Core.Services;
 
 public class ServerConsole : IService
 {
-    private readonly IHostApplicationLifetime _appLifetime;
     private readonly Dictionary<string, ConsoleCommand> _commands;
     private readonly Thread _consoleThread;
     private readonly ServerHandler _handler;
     private readonly ILogger<ServerConsole> _logger;
     private readonly TimerThread _timerThread;
     private readonly World _world;
+    private readonly EventSink _sink;
 
-    public ServerConsole(TimerThread timerThread, ServerHandler handler, ILogger<ServerConsole> logger,
-        IHostApplicationLifetime appLifetime, World world)
+    public ServerConsole(TimerThread timerThread, ServerHandler handler, ILogger<ServerConsole> logger, World world, EventSink sink)
     {
         _timerThread = timerThread;
         _handler = handler;
         _logger = logger;
-        _appLifetime = appLifetime;
         _world = world;
+        _sink = sink;
 
         _commands = [];
 
@@ -38,7 +38,7 @@ public class ServerConsole : IService
         };
     }
 
-    public void Initialize() => _appLifetime.ApplicationStarted.Register(RunConsoleListener);
+    public void Initialize() => _sink.ServerStarted += (_) => RunConsoleListener();
 
     public void RunConsoleListener()
     {
@@ -111,8 +111,6 @@ public class ServerConsole : IService
                 _logger.LogInformation("Successfully ran command '{Name}'", name);
             }
         }
-
-        DisplayHelp();
     }
 
     public void DisplayHelp()
