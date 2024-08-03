@@ -1,4 +1,5 @@
 ﻿using AspNetCoreRateLimit;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
@@ -56,17 +57,14 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
             }
         );
 
-        builder.WebHost.UseKestrel();
+        builder.WebHost.UseUrls("http://localhost:6783").UseKestrel();
     }
 
     public override void PostWebBuild(WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
+        app.UseDeveloperExceptionPage();
 
-            app.UseHsts();
-        }
+        app.UseHsts();
 
         app.UseFileServer();
 
