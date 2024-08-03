@@ -104,6 +104,7 @@ public class Game
         await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
         await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"The controller has joined game {RoomCode}");
+        await CheckAndSendState();
 
         return true;
     }
@@ -133,6 +134,7 @@ public class Game
             await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
             await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"A new player joined game {RoomCode}");
+            await CheckAndSendState();
 
             var waitingForPlayers = true;
 
@@ -179,31 +181,34 @@ public class Game
             GameReady = false;
 
             await Group.GameNotReady();
+            await CheckAndSendState();
 
             if (playerId > 0)
                 _availablePlayerIds.Enqueue(playerId);
         }
     }
 
-    public void StartTutorial()
+    public async Task StartTutorial()
     {
         _lobby.WaitingGames.TryRemove(RoomCode, out var _);
         _lobby.ActiveGames[RoomCode] = this;
 
         state = GameState.InTutorial;
+        await CheckAndSendState();
 
-        Group.TutorialStart();
+        await Group.TutorialStart();
     }
 
-    public async void StartGame()
+    public async Task StartGame()
     {
         Resources = new ResourcesModel();
 
         state = GameState.InGame;
+        await CheckAndSendState();
+
+        await Group.GameStart();
 
         _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
-
-        await CheckAndSendState();
     }
 
     public static async Task DecreaseResources(object obj)
@@ -225,6 +230,7 @@ public class Game
             await EndGame();
 
             state = GameState.GameOver;
+            await CheckAndSendState();
 
             return;
         }
