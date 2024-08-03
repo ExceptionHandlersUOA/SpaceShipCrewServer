@@ -1,7 +1,7 @@
 
 <div align="center">
     <h1>
-        <img width="70%" src="LogoBanner.png?raw=true" style="border-radius: 50%;" align="center">
+        <img width="70%" src="LogoBanner.jpg?raw=true" style="border-radius: 50%;" align="center">
         <br>
     </h1>
     <h3>A websocket server for the UOA space-themed hackathon, written in C#!</h3>
