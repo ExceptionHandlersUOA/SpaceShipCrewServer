@@ -16,10 +16,4 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="Licences\LICENSE_SERVUO">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
 </Project>

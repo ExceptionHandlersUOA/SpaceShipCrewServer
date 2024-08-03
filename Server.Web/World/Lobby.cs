@@ -2,59 +2,44 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 
-namespace Server.Web.World
+namespace Server.Web.World;
+
+public class Lobby(IServiceProvider serviceProvider)
 {
-    public class Lobby(IServiceProvider serviceProvider)
+    public readonly ConcurrentDictionary<string, Game> WaitingGames = [];
+    public readonly ConcurrentDictionary<string, Game> ActiveGames = [];
+
+    public async Task<Game> AddControllerToGameAsync(HubCallerContext hubCallerContext)
     {
-        private readonly ConcurrentQueue<Game> _waitingGames = new();
+        var newGame = serviceProvider.GetRequiredService<Game>();
 
-        public readonly ConcurrentDictionary<string, Game> ActiveGames = new();
+        if (!await newGame.AddControllerAsync(hubCallerContext.ConnectionId))
+            return null;
 
-        private static readonly object _gameKey = new();
+        LinkGameToPlayer(hubCallerContext, newGame);
 
-        public async Task<Game> AddPlayerToGameAsync(HubCallerContext hubCallerContext)
-        {
-            if (hubCallerContext.Items[_gameKey] is Game g)
-                return g;
+        return newGame;
+    }
 
-            while (true)
-            {
-                if (_waitingGames.TryPeek(out var game))
-                {
-                    if (!await game.AddPlayerAsync(hubCallerContext.ConnectionId))
-                    {
-                        if (ActiveGames.TryAdd(game.Name, game))
-                        {
-                            game.Completed.UnsafeRegister(_ =>
-                            {
-                                ActiveGames.TryRemove(game.Name, out var _);
-                            },
-                            null);
+    public async Task<int> AddPlayerToGameAsync(HubCallerContext hubCallerContext, string inviteCode, string username)
+    {
+        if (!WaitingGames.TryGetValue(inviteCode, out var game))
+            return -1;
 
-                            _waitingGames.TryDequeue(out _);
-                        }
+        if (!await game.AddPlayerAsync(hubCallerContext.ConnectionId, username))
+            return -1;
 
-                        continue;
-                    }
-                    else
-                    {
-                        hubCallerContext.Items[_gameKey] = game;
+        LinkGameToPlayer(hubCallerContext, game);
 
-                        hubCallerContext.ConnectionAborted.Register(() =>
-                        {
-                            _ = game.RemovePlayerAsync(hubCallerContext.ConnectionId);
-                        });
+        return game.ConnectionToId[hubCallerContext.ConnectionId];
+    }
 
-                        game.Completed.Register(() => hubCallerContext.Items.Remove(_gameKey));
-                    }
+    private static void LinkGameToPlayer(HubCallerContext hubCallerContext, Game game)
+    {
+        hubCallerContext.Items["Game"] = game;
 
-                    return game;
-                }
+        hubCallerContext.ConnectionAborted.Register(() => _ = game.RemovePlayerAsync(hubCallerContext.ConnectionId));
 
-                var newGame = serviceProvider.GetRequiredService<Game>();
-
-                _waitingGames.Enqueue(newGame);
-            }
-        }
+        game.Completed.Register(() => hubCallerContext.Items.Remove("Game"));
     }
 }

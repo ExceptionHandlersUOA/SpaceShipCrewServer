@@ -1,5 +1,4 @@
 ﻿using AspNetCoreRateLimit;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Server.Base.Core.Abstractions;
 using Server.Web.Abstractions;
+using Server.Web.Protocols;
 using Server.Web.World;
 
 namespace Server.Web;
@@ -29,11 +29,6 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         services.AddSingleton<Lobby>();
         services.AddTransient<Game>();
-
-        services.AddHttpClient(string.Empty, client =>
-        {
-            client.BaseAddress = new Uri("http://0.0.0.0:6783/ws");
-        });
     }
 
     public override void ConfigureServices(ConfigurationManager configuration, IServiceCollection services)

@@ -1,139 +1,219 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Server.Base.Timers.Extensions;
+using Server.Base.Timers.Services;
 using Server.Web.Configs;
+using Server.Web.Models;
+using Server.Web.Protocols;
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
-namespace Server.Web.World
+namespace Server.Web.World;
+
+public class Game
 {
-    public class Game
+    private readonly IHubContext<GameHub, IGamePlayer> _hubContext;
+    private readonly ILogger _logger;
+
+    private readonly Lobby _lobby;
+    private readonly TimerThread _timerThread;
+
+    private readonly CancellationTokenSource _completedCts = new();
+
+    public ResourcesModel Resources = new ();
+
+    public StateModel StateModel => new ()
     {
-        private readonly IHubContext<GameHub, IGamePlayer> _hubContext;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger _logger;
+         InternalRoles = IdToPlayer.ToDictionary(x => x.Value.Role, x => x.Value),
+         Resources = Resources
+    };
 
-        private readonly Lobby _lobby;
+    public string RoomCode { get; }
 
-        private readonly ConcurrentDictionary<string, PlayerState> _players = new();
-        private readonly CancellationTokenSource _completedCts = new();
-        private readonly Channel<int> _playerSlots;
+    private IGamePlayer Group { get; }
 
-        public Game(IHubContext<GameHub, IGamePlayer> hubContext,
-                    IHttpClientFactory httpClientFactory,
-                    ILogger<Game> logger,
-                    WebRConfig config,
-                    Lobby lobby)
+    public PlayerState Controller => IdToPlayer[0];
+
+    private readonly Channel<int> _playerSlots;
+    private readonly ConcurrentQueue<int> _availablePlayerIds = [];
+
+    public readonly ConcurrentDictionary<string, PlayerState> ConnectionToPlayer = [];
+    public readonly ConcurrentDictionary<string, int> ConnectionToId = [];
+
+    public Dictionary<int, PlayerState> IdToPlayer => ConnectionToPlayer.Keys.ToDictionary(x => ConnectionToId[x], x => ConnectionToPlayer[x]);
+
+    public CancellationToken Completed => _completedCts.Token;
+
+    public Game(IHubContext<GameHub, IGamePlayer> hubContext,
+                ILogger<Game> logger,
+                WebRConfig config,
+                TimerThread timerThread,
+                Lobby lobby)
+    {
+        _hubContext = hubContext;
+        _logger = logger;
+        _playerSlots = Channel.CreateBounded<int>(config.MaxPlayersPerGame);
+        _lobby = lobby;
+        _timerThread = timerThread;
+
+        RoomCode = GenerateInviteCode();
+        Group = hubContext.Clients.Group(RoomCode);
+
+        for (var i = 0; i < config.MaxPlayersPerGame; i++)
         {
-            _hubContext = hubContext;
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
-            _playerSlots = Channel.CreateBounded<int>(config.MaxPlayersPerGame);
-            _lobby = lobby;
+            _playerSlots.Writer.TryWrite(0);
+            _availablePlayerIds.Enqueue(i + 1);
+        }
+    }
 
-            Name = GenerateInviteCode();
-            Group = hubContext.Clients.Group(Name);
+    public string GenerateInviteCode()
+    {
+        const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-            for (int i = 0; i < config.MaxPlayersPerGame; i++)
+        var random = new Random();
+        var codeLength = 8;
+        var code = new string(Enumerable.Repeat(alphabet, codeLength)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+
+        return _lobby.ActiveGames.ContainsKey(code) ? GenerateInviteCode() :
+            _lobby.WaitingGames.ContainsKey(code) ? GenerateInviteCode() :
+            code;
+    }
+
+    public async Task<bool> AddControllerAsync(string connectionId)
+    {
+        if (ConnectionToId.Values.Any(i => i == 0))
+            return false;
+
+        ConnectionToPlayer.TryAdd(connectionId, new PlayerState
+        {
+            Proxy = _hubContext.Clients.Client(connectionId),
+            PlayerId = 0,
+            Username = "Controller"
+        });
+
+        ConnectionToId[connectionId] = 0;
+
+        await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
+
+        await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"The controller has joined game {RoomCode}");
+
+        return true;
+    }
+
+    public async Task<bool> AddPlayerAsync(string connectionId, string username)
+    {
+        if (_playerSlots.Reader.TryRead(out _))
+        {
+            var playerState = new PlayerState
             {
-                _playerSlots.Writer.TryWrite(0);
+                Proxy = _hubContext.Clients.Client(connectionId),
+                Username = username
+            };
+
+            if (_availablePlayerIds.TryDequeue(out var playerId))
+            {
+                ConnectionToId[connectionId] = playerId;
+                playerState.PlayerId = playerId;
             }
-        }
-
-        public string Name { get; }
-
-        private IGamePlayer Group { get; }
-        public CancellationToken Completed => _completedCts.Token;
-
-        public string GenerateInviteCode()
-        {
-            const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            var random = new Random();
-            var codeLength = 8;
-            var code = new string(Enumerable.Repeat(alphabet, codeLength)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
-
-            if (_lobby.ActiveGames.ContainsKey(code))
-                return GenerateInviteCode();
-
-            return code;
-        }
-
-        public async Task<bool> AddPlayerAsync(string connectionId)
-        {
-            if (_playerSlots.Reader.TryRead(out _))
+            else
             {
-                _players.TryAdd(connectionId, new PlayerState
-                {
-                    Proxy = _hubContext.Clients.Client(connectionId)
-                });
+                return false;
+            }
 
-                await _hubContext.Groups.AddToGroupAsync(connectionId, Name);
+            ConnectionToPlayer.TryAdd(connectionId, playerState);
 
-                await _hubContext.Clients.GroupExcept(Name, connectionId).WriteMessage($"A new player joined game {Name}");
+            await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
-                var waitingForPlayers = true;
+            await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"A new player joined game {RoomCode}");
+
+            var waitingForPlayers = true;
+
+            if (!_playerSlots.Reader.TryPeek(out _))
+            {
+                _playerSlots.Writer.TryComplete();
 
                 if (!_playerSlots.Reader.TryPeek(out _))
                 {
-                    _playerSlots.Writer.TryComplete();
-
-                    if (!_playerSlots.Reader.TryPeek(out _))
-                    {
-                        waitingForPlayers = false;
-                        _ = Task.Run(PlayGame);
-                    }
-                }
-
-                if (waitingForPlayers)
-                    await Group.WriteMessage($"Waiting for {_playerSlots.Reader.Count} player(s) to join.");
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public async Task RemovePlayerAsync(string connectionId)
-        {
-            if (_players.TryRemove(connectionId, out _))
-            {
-                _playerSlots.Writer.TryWrite(0);
-                await Group.WriteMessage($"A player has left the game");
-            }
-        }
-
-        private async Task PlayGame()
-        {
-            var timoutTokenSource = new CancellationTokenSource();
-
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-
-                bool completed = true;
-
-                await Group.GameStarted();
-
-                if (completed)
-                {
-                    foreach (var (_, player) in _players)
-                        await player.Proxy.GameCompleted();
+                    waitingForPlayers = false;
+                    await Group.GameReady();
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "The game {Name} failed", Name);
 
-                await Group.WriteMessage($"The game {Name} failed: {ex}");
-            }
-            finally
-            {
-                _logger.LogInformation("The game {Name} has finished.", Name);
+            if (waitingForPlayers)
+                await Group.WriteMessage($"Waiting for {_playerSlots.Reader.Count} player(s) to join.");
 
-                timoutTokenSource.Dispose();
-
-                _completedCts.Cancel();
-            }
+            return true;
         }
+
+        return false;
+    }
+
+    public async Task RemovePlayerAsync(string connectionId)
+    {
+        if (ConnectionToPlayer.TryRemove(connectionId, out _))
+        {
+            _playerSlots.Writer.TryWrite(0);
+            await Group.WriteMessage($"A player has left the game");
+        }
+
+        if (ConnectionToId.TryGetValue(connectionId, out var playerId))
+        {
+            ConnectionToId.Remove(connectionId, out var _);
+
+            await Group.GameNotReady();
+
+            if (playerId > 0)
+                _availablePlayerIds.Enqueue(playerId);
+        }
+    }
+
+    public void StartTutorial()
+    {
+        _lobby.WaitingGames.TryRemove(RoomCode, out var _);
+        _lobby.ActiveGames[RoomCode] = this;
+
+        Group.TutorialStart();
+    }
+
+    public void StartGame()
+    {
+        Resources = new ResourcesModel();
+
+        _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
+    }
+
+    public static async Task DecreaseResources(object obj)
+    {
+        var game = (Game) obj;
+
+        game.Resources.Water--;
+        game.Resources.Fuel--;
+        game.Resources.Electricity--;
+        game.Resources.Oxygen--;
+
+        await game.CheckAndSendState();
+    }
+
+    public async Task CheckAndSendState()
+    {
+        if (Resources.Depleated())
+        {
+            await EndGame();
+            return;
+        }
+
+        Resources.EnsureBounds();
+        await Group.State(StateModel);
+    }
+
+    public async Task EndGame()
+    {
+        foreach (var (_, player) in ConnectionToPlayer)
+            await player.Proxy.WriteMessage("Game has been completed!");
+
+        _logger.LogInformation("The game {Name} has finished.", RoomCode);
+
+        _completedCts.Cancel();
     }
 }
