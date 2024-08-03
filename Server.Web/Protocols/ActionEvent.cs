@@ -35,6 +35,8 @@ public partial class GameHub
                 game.Resources.Electricity += 15;
                 game.Resources.Fuel -= 5;
 
+                await game.CheckAndSendState();
+
                 break;
             default:
                 throw new ArgumentException($"Unknown action: {action}");
