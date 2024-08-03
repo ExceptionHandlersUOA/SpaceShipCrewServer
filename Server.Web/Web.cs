@@ -69,7 +69,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         app.MapHub<GameHub>("/hub");
 
-        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().AllowCredentials());
+        app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
         app.UseIpRateLimiting();
     }
