@@ -1,7 +1,7 @@
 
 <div align="center">
     <h1>
-        <img width="30%" src="LogoBanner.jpg?raw=true" style="border-radius: 50%;" align="center">
+        <img width="30%" src="LogoBanner.jpg?raw=true" style="align="center">
         <br>
     </h1>
     <h3>A websocket server for the UOA space-themed hackathon, written in C#!</h3>
@@ -31,3 +31,7 @@ This project consists of the following components:
 
 * A websocket server over SignalR
 * A lobby and room system
+
+## Commemorations
+
+Logo by <a href=" https://www.vectorportal.com" >Vectorportal.com</a>,  <a class="external text" href="https://creativecommons.org/licenses/by/4.0/" >CC BY</a>
