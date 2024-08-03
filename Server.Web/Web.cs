@@ -56,6 +56,8 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
                 ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
             }
         );
+
+        builder.WebHost.UseUrls("http://localhost:80").UseKestrel().ConfigureKestrel(o => o.ListenAnyIP(80));
     }
 
     public override void PostWebBuild(WebApplication app)
