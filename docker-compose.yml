@@ -1,0 +1,10 @@
+services:
+  hackathon:
+    container_name: hackathon
+    image: ghcr.io/exceptionhandlersuoa/backend:latest
+    restart: unless-stopped
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
