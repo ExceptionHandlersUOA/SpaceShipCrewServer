@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Server.Base.Core.Abstractions;
 using Server.Web.Abstractions;
@@ -25,7 +24,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
         services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>(); ;
-        
+
         services.AddSignalR();
 
         services.AddSingleton<Lobby>();
@@ -33,7 +32,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         services.AddHttpClient(string.Empty, client =>
         {
-            client.BaseAddress = new Uri("http://localhost:6783/ws");
+            client.BaseAddress = new Uri("http://0.0.0.0:6783/ws");
         });
     }
 
@@ -56,8 +55,6 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
                 ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
             }
         );
-
-        builder.WebHost.UseUrls("http://localhost:6783").UseKestrel();
     }
 
     public override void PostWebBuild(WebApplication app)
