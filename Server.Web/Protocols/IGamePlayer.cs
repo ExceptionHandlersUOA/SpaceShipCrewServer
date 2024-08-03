@@ -7,7 +7,7 @@ public interface IGamePlayer
     // Debug messages are sent to the client.
     Task WriteMessage(string message);
 
-    // Not all players have picked roll or does not meet player count.
+    // Not all players have picked a role or it does not meet player count.
     Task GameNotReady();
 
     // All players have a role and meet maximum player count.

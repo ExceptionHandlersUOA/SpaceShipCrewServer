@@ -4,7 +4,7 @@ namespace Server.Web.Protocols;
 public partial class GameHub
 {
     // FROM TV
-    public SelectRoleAckDTO SelectRole(SelectRoleDTO data)
+    public async Task<SelectRoleAckDTO> SelectRole(SelectRoleDTO data)
     {
         // Tutorial animation has concluded
         // Start game timers and sending state
@@ -21,6 +21,8 @@ public partial class GameHub
             return new SelectRoleAckDTO() { Success = false };
 
         game.ConnectionToPlayer[Context.ConnectionId].Role = role;
+
+        await game.CheckAndSendState();
 
         game.CheckGameReady();
 
