@@ -23,11 +23,14 @@ public class Game
 
     public ResourcesModel Resources = new ();
 
+
     public bool GameReady = false;
+    public GameState state = GameState.Lobby;
 
     public StateModel StateModel => new ()
     {
          InternalRoles = IdToPlayer.ToDictionary(x => x.Value.Role, x => x.Value),
+         InternalGameState = state,
          Resources = Resources
     };
 
@@ -186,14 +189,20 @@ public class Game
         _lobby.WaitingGames.TryRemove(RoomCode, out var _);
         _lobby.ActiveGames[RoomCode] = this;
 
+        state = GameState.InTutorial;
+
         Group.TutorialStart();
     }
 
-    public void StartGame()
+    public async void StartGame()
     {
         Resources = new ResourcesModel();
 
+        state = GameState.InGame;
+
         _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
+
+        await CheckAndSendState();
     }
 
     public static async Task DecreaseResources(object obj)
@@ -213,10 +222,14 @@ public class Game
         if (Resources.Depleated())
         {
             await EndGame();
+
+            state = GameState.GameOver;
+
             return;
         }
 
         Resources.EnsureBounds();
+
         await Group.State(StateModel);
     }
 
