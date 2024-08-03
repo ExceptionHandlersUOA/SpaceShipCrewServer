@@ -3,7 +3,7 @@
 public partial class GameHub
 {
     // FROM TV
-    public async Task<RoomCreateAckDTO> RoomCreate()
+    public async Task<RoomCreateAckDTO> RoomCreate(object _)
     {
         // Returns room code for the room that was created.
 

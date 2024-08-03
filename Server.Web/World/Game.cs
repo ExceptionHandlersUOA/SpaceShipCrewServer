@@ -15,16 +15,16 @@ public class Game
 {
     private readonly IHubContext<GameHub, IGamePlayer> _hubContext;
     private readonly ILogger _logger;
-
     private readonly Lobby _lobby;
     private readonly TimerThread _timerThread;
+    private readonly WebRConfig _config;
 
     private readonly CancellationTokenSource _completedCts = new();
 
     public ResourcesModel Resources = new ();
 
-
     public bool GameReady = false;
+
     public GameState state = GameState.Lobby;
 
     public StateModel StateModel => new ()
@@ -61,6 +61,7 @@ public class Game
         _playerSlots = Channel.CreateBounded<int>(config.MaxPlayersPerGame);
         _lobby = lobby;
         _timerThread = timerThread;
+        _config = config;
 
         RoomCode = GenerateInviteCode();
         Group = hubContext.Clients.Group(RoomCode);
@@ -77,8 +78,8 @@ public class Game
         const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         var random = new Random();
-        var codeLength = 8;
-        var code = new string(Enumerable.Repeat(alphabet, codeLength)
+
+        var code = new string(Enumerable.Repeat(alphabet, _config.MaxPlayersPerGame)
             .Select(s => s[random.Next(s.Length)]).ToArray());
 
         return _lobby.ActiveGames.ContainsKey(code) ? GenerateInviteCode() :
