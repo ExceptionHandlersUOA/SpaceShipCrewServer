@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Server.Web.Configs;
 using System.Collections.Concurrent;
 using System.Threading.Channels;
@@ -9,8 +8,6 @@ namespace Server.Web.World
 {
     public class Game
     {
-        private readonly TimeSpan _serverTimeout;
-
         private readonly IHubContext<GameHub, IGamePlayer> _hubContext;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
@@ -36,10 +33,6 @@ namespace Server.Web.World
             Name = GenerateInviteCode();
             Group = hubContext.Clients.Group(Name);
 
-            // Give the client some buffer
-            _serverTimeout = TimeSpan.FromSeconds(60);
-
-            // Fill the slots for this game
             for (int i = 0; i < config.MaxPlayersPerGame; i++)
             {
                 _playerSlots.Writer.TryWrite(0);

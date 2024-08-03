@@ -33,7 +33,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         services.AddHttpClient(string.Empty, client =>
         {
-            client.BaseAddress = new Uri("https://hackathon.feroxfoxxo.com/api/ws");
+            client.BaseAddress = new Uri("https://hackathon.feroxfoxxo.com/ws");
         });
     }
 
@@ -41,11 +41,6 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
     {
         services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
         services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
-
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
-                options => configuration.Bind("CookieSettings", options)
-        );
     }
 
     public override void InitializeWeb(WebApplicationBuilder builder)
@@ -76,7 +71,7 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
 
         app.UseRouting();
 
-        app.MapHub<GameHub>("/trivia");
+        app.MapHub<GameHub>("/hub");
 
         app.UseIpRateLimiting();
     }
