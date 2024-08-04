@@ -128,16 +128,14 @@ public class Game
             {
                 ConnectionToId[connectionId] = playerId;
                 playerState.PlayerId = playerId;
-
-                if (_availableRoles.TryDequeue(out var role))
-                    playerState.Role = role;
-                else
-                    return false;
             }
             else
-            {
                 return false;
-            }
+
+            if (_availableRoles.TryDequeue(out var role))
+                playerState.Role = role;
+            else
+                return false;
 
             ConnectionToPlayer.TryAdd(connectionId, playerState);
 

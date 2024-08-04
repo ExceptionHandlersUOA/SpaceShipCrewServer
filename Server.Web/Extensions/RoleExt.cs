@@ -5,7 +5,6 @@ public static class RoleExt
 {
     public static string ToString(Role role) => role switch
     {
-        Role.Unknown => "unknown",
         Role.Engineer => "engineer",
         Role.Chemist => "chemist",
         Role.Pilot => "pilot",
@@ -14,7 +13,6 @@ public static class RoleExt
 
     public static Role ToRole(string role) => role switch
     {
-        "unknown" => Role.Unknown,
         "engineer" => Role.Engineer,
         "chemist" => Role.Chemist,
         "pilot" => Role.Pilot,
