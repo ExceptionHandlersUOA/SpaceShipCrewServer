@@ -5,7 +5,7 @@ namespace Server.Web.Protocols;
 public interface IGamePlayer
 {
     // Debug messages are sent to the client.
-    Task WriteMessage(string message);
+    Task WriteMessage(MessageModel message);
 
     // Not all players have picked a role or it does not meet player count.
     Task GameNotReady();

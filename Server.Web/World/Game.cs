@@ -7,6 +7,7 @@ using Server.Web.Enums;
 using Server.Web.Models;
 using Server.Web.Protocols;
 using System.Collections.Concurrent;
+using System.Drawing;
 using System.Threading.Channels;
 
 namespace Server.Web.World;
@@ -36,7 +37,7 @@ public class Game
 
     public string RoomCode { get; }
 
-    private IGamePlayer Group { get; }
+    public IGamePlayer Group { get; }
 
     public PlayerState Controller => IdToPlayer[0];
 
@@ -108,7 +109,7 @@ public class Game
 
         await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
-        await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"The controller has joined game {RoomCode}");
+        await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage(new MessageModel($"The controller has joined game {RoomCode}", Color.DarkGreen));
         await CheckAndSendState();
 
         return true;
@@ -141,7 +142,7 @@ public class Game
 
             await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
-            await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage($"A new player joined game {RoomCode}");
+            await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage(new MessageModel($"A new player joined game {RoomCode}", Color.Green));
             await CheckAndSendState();
 
             var waitingForPlayers = true;
@@ -159,7 +160,7 @@ public class Game
             }
 
             if (waitingForPlayers)
-                await Group.WriteMessage($"Waiting for {_playerSlots.Reader.Count} player(s) to join.");
+                await Group.WriteMessage(new MessageModel($"Waiting for {_playerSlots.Reader.Count} player(s) to join.", Color.Yellow));
 
             return true;
         }
@@ -172,7 +173,7 @@ public class Game
         if (ConnectionToPlayer.TryRemove(connectionId, out var player))
         {
             _playerSlots.Writer.TryWrite(0);
-            await Group.WriteMessage($"A player has left the game");
+            await Group.WriteMessage(new MessageModel($"A player has left the game", Color.Red));
         }
 
         if (ConnectionToId.TryGetValue(connectionId, out var playerId))
@@ -235,7 +236,7 @@ public class Game
 
     public async Task EndGame()
     {
-        await Group.WriteMessage("Game has been completed!");
+        await Group.WriteMessage(new MessageModel("Game has been completed!", Color.Gold));
 
         await Group.GameEnd();
 

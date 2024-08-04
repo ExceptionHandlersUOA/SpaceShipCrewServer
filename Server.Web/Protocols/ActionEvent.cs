@@ -1,5 +1,7 @@
 ﻿using Server.Web.Enums;
 using Server.Web.Extensions;
+using Server.Web.Models;
+using System.Drawing;
 
 namespace Server.Web.Protocols;
 public partial class GameHub
@@ -16,6 +18,8 @@ public partial class GameHub
         if (game == null)
             return;
 
+        var player = game.ConnectionToPlayer[Context.ConnectionId];
+
         switch(action)
         {
             case PlayerAction.CorrectFormula:
@@ -23,6 +27,9 @@ public partial class GameHub
                 game.Resources.Water -= 5;
 
                 await game.CheckAndSendState();
+
+                await game.Group.WriteMessage(new MessageModel($"Vrrm, get ready for hyperspeed! {player.Username} has created <b>fuel</b>.", Color.Gold));
+
                 break;
             case PlayerAction.HarvestAsteroid:
                 game.Resources.Water += 15;
@@ -30,10 +37,14 @@ public partial class GameHub
 
                 await game.CheckAndSendState();
 
+                await game.Group.WriteMessage(new MessageModel($"<b>Water</b> water everywhere - an asteroid has been harvested by {player.Username}!", Color.Gold));
+
                 break;
             case PlayerAction.MatchSine:
                 game.Resources.Electricity += 15;
                 game.Resources.Fuel -= 5;
+
+                await game.Group.WriteMessage(new MessageModel($"The light of my life - {player.Username} - has generated <b>electricity</b>!", Color.Gold));
 
                 await game.CheckAndSendState();
 
