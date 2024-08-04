@@ -13,11 +13,7 @@ public interface IGamePlayer
     // All players have a role and meet maximum player count.
     Task GameReady();
 
-    // Tutorial introduction animation begins.
-    // Once it ends, the first state will be sent.
-    Task TutorialStart();
-
-    // Sent to all clients when the tutorial has finished and the game starts.
+    // Sent to all clients when the game starts.
     Task GameStart();
 
     // State has been updated, new state is sent to client

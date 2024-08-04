@@ -3,14 +3,14 @@
 public partial class GameHub
 {
     // FROM MOBILE
-    public void RoomStart(object _)
+    public async Task RoomStart(object _)
     {
-        // Moves out of the lobby, starts the tutorial part of the game
+        // Moves out of the lobby, starts the game
         var game = GetCurrentGame();
 
         if (game == null)
             return;
 
-        game.StartTutorial();
+        await game.StartGame();
     }
 }

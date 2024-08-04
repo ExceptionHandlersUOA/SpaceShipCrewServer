@@ -42,6 +42,7 @@ public class Game
 
     private readonly Channel<int> _playerSlots;
     private readonly ConcurrentQueue<int> _availablePlayerIds = [];
+    private readonly ConcurrentQueue<Role> _availableRoles = [];
 
     public readonly ConcurrentDictionary<string, PlayerState> ConnectionToPlayer = [];
     public readonly ConcurrentDictionary<string, int> ConnectionToId = [];
@@ -71,6 +72,10 @@ public class Game
             _playerSlots.Writer.TryWrite(0);
             _availablePlayerIds.Enqueue(i + 1);
         }
+
+        _availableRoles.Enqueue(Role.Pilot);
+        _availableRoles.Enqueue(Role.Chemist);
+        _availableRoles.Enqueue(Role.Engineer);
     }
 
     public string GenerateInviteCode()
@@ -123,6 +128,11 @@ public class Game
             {
                 ConnectionToId[connectionId] = playerId;
                 playerState.PlayerId = playerId;
+
+                if (_availableRoles.TryDequeue(out var role))
+                    playerState.Role = role;
+                else
+                    return false;
             }
             else
             {
@@ -146,8 +156,7 @@ public class Game
                 {
                     waitingForPlayers = false;
 
-                    GameReady = false;
-                    CheckGameReady();
+                    await Group.GameReady();
                 }
             }
 
@@ -160,15 +169,9 @@ public class Game
         return false;
     }
 
-    public void CheckGameReady()
-    {
-        if (GameReady && !ConnectionToPlayer.Values.Any(p => p.Role == Role.Unknown))
-            Group.GameReady();
-    }
-
     public async Task RemovePlayerAsync(string connectionId)
     {
-        if (ConnectionToPlayer.TryRemove(connectionId, out _))
+        if (ConnectionToPlayer.TryRemove(connectionId, out var player))
         {
             _playerSlots.Writer.TryWrite(0);
             await Group.WriteMessage($"A player has left the game");
@@ -184,19 +187,11 @@ public class Game
             await CheckAndSendState();
 
             if (playerId > 0)
+            {
                 _availablePlayerIds.Enqueue(playerId);
+                _availableRoles.Enqueue(player.Role);
+            }
         }
-    }
-
-    public async Task StartTutorial()
-    {
-        _lobby.WaitingGames.TryRemove(RoomCode, out var _);
-        _lobby.ActiveGames[RoomCode] = this;
-
-        state = GameState.InTutorial;
-        await CheckAndSendState();
-
-        await Group.TutorialStart();
     }
 
     public async Task StartGame()

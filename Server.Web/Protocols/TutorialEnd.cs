@@ -11,6 +11,5 @@ public partial class GameHub
         if (game == null)
             return;
 
-        game.StartGame();
     }
 }

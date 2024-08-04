@@ -2,7 +2,6 @@
 public enum GameState
 {
     Lobby,
-    InTutorial,
     InGame,
     GameOver
 }
