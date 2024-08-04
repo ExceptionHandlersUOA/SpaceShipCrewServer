@@ -212,7 +212,7 @@ public class Game
 
         await Group.GameStart();
 
-        _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
+        _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), this, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
     }
 
     public static async Task DecreaseResources(object obj)
