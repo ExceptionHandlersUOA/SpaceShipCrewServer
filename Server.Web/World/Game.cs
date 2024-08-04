@@ -228,7 +228,7 @@ public class Game
         game.Resources.Electricity -= 1 + game.LinearDecrease;
         game.Resources.Oxygen -= 1 + game.LinearDecrease;
 
-        game.LinearDecrease += .05f;
+        game.LinearDecrease += .025f;
 
         await game.CheckAndSendState();
     }
