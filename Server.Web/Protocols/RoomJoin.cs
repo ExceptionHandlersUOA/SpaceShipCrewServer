@@ -14,6 +14,9 @@ public partial class GameHub
         var roomCode = data.RoomCode.ToUpper();
         var username = data.Username;
 
+        if (username.Length > 18)
+            username = username[..18];
+
         var id = await lobby.AddPlayerToGameAsync(Context, roomCode, username);
 
         return new RoomJoinAckDTO()

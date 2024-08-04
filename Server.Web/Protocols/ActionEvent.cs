@@ -34,7 +34,7 @@ public partial class GameHub
 
                 break;
             case PlayerAction.HarvestAsteroid:
-                game.Resources.Water += 15;
+                game.Resources.Water += 10;
                 game.Resources.Electricity -= 5;
 
                 await game.CheckAndSendState();
@@ -43,7 +43,7 @@ public partial class GameHub
 
                 break;
             case PlayerAction.MatchSine:
-                game.Resources.Electricity += 15;
+                game.Resources.Electricity += 20;
                 game.Resources.Fuel -= 5;
 
                 await game.Group.WriteMessage(new MessageModel($"The light of my life - {player.Username} - has generated <b>electricity</b>!", Color.Gold));
