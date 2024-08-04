@@ -24,6 +24,8 @@ public class Game
 
     public ResourcesModel Resources = new ();
 
+    private Base.Timers.Timer timer;
+
     public bool GameReady = false;
 
     public GameState state = GameState.Lobby;
@@ -212,7 +214,7 @@ public class Game
 
         await Group.GameStart();
 
-        _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), this, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
+        timer = _timerThread.DelayCall((obj) => _ = DecreaseResources(obj), this, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), -1);
     }
 
     public static async Task DecreaseResources(object obj)
@@ -254,7 +256,10 @@ public class Game
 
         _completedCts.Cancel();
 
+        timer?.Stop();
+
         _lobby.ActiveGames.TryRemove(RoomCode, out var _);
+        _lobby.WaitingGames.TryRemove(RoomCode, out var _);
     }
 
     public void GenerateNewSequence()
