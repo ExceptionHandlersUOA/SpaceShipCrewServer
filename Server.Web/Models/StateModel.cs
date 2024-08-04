@@ -12,6 +12,8 @@ public class StateModel
     [JsonIgnore]
     public GameState InternalGameState { get; set; }
 
+    public string CurrentSequence { get; set; }
+
     public string GameState {
         get => GameStateExt.ToString(InternalGameState);
         set => InternalGameState = GameStateExt.ToGameState(value);

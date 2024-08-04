@@ -32,7 +32,8 @@ public class Game
     {
          InternalRoles = IdToPlayer.ToDictionary(x => x.Value.Role, x => x.Value),
          InternalGameState = state,
-         Resources = Resources
+         Resources = Resources,
+         CurrentSequence = CurrentSequence
     };
 
     public string RoomCode { get; }
@@ -51,6 +52,8 @@ public class Game
     public Dictionary<int, PlayerState> IdToPlayer => ConnectionToPlayer.Keys.ToDictionary(x => ConnectionToId[x], x => ConnectionToPlayer[x]);
 
     public CancellationToken Completed => _completedCts.Token;
+
+    public string CurrentSequence = string.Empty;
 
     public Game(IHubContext<GameHub, IGamePlayer> hubContext,
                 ILogger<Game> logger,
@@ -77,6 +80,8 @@ public class Game
         _availableRoles.Enqueue(Role.Pilot);
         _availableRoles.Enqueue(Role.Chemist);
         _availableRoles.Enqueue(Role.Engineer);
+
+        GenerateNewSequence();
     }
 
     public string GenerateInviteCode()
@@ -245,5 +250,23 @@ public class Game
         _completedCts.Cancel();
 
         _lobby.ActiveGames.TryRemove(RoomCode, out var _);
+    }
+
+    public void GenerateNewSequence()
+    {
+        var minLength = 5;
+        var maxLength = 8;
+
+        var random = new Random();
+
+        var length = random.Next(minLength, maxLength + 1);
+        var chars = new char[length];
+
+        var allowedChars = "OH";
+
+        for (var i = 0; i < length; i++)
+            chars[i] = allowedChars[random.Next(allowedChars.Length)];
+
+        CurrentSequence = new string(chars);
     }
 }

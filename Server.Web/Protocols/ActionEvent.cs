@@ -23,8 +23,10 @@ public partial class GameHub
         switch(action)
         {
             case PlayerAction.CorrectFormula:
-                game.Resources.Fuel += 15;
-                game.Resources.Water -= 5;
+                game.Resources.Fuel += game.CurrentSequence.Length * 3;
+                game.Resources.Water -= game.CurrentSequence.Length;
+
+                game.GenerateNewSequence();
 
                 await game.CheckAndSendState();
 
