@@ -252,7 +252,21 @@ public class Game
 
     public async Task EndGame()
     {
-        await Group.WriteMessage(new MessageModel("Game has ended! It looks like the spaceship went <b>boom!</b>", Color.LightSalmon));
+        var deadResource = new List<string>();
+
+        if (Resources.Oxygen < 0)
+            deadResource.Add("Oxygen");
+
+        if (Resources.Water < 0)
+            deadResource.Add("Water");
+
+        if (Resources.Fuel < 0)
+            deadResource.Add("Fuel");
+
+        if (Resources.Electricity < 0)
+            deadResource.Add("Electricity");
+
+        await Group.WriteMessage(new MessageModel($"Game has ended! It looks like the spaceship went <b>boom!</b> Due to {string.Join(", ", [.. deadResource])}", Color.LightSalmon));
 
         await Group.GameEnd();
 
