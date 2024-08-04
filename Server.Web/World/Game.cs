@@ -30,7 +30,7 @@ public class Game
 
     public StateModel StateModel => new ()
     {
-         InternalRoles = IdToPlayer.ToDictionary(x => x.Value.Role, x => x.Value),
+         InternalRoles = IdToPlayer.Where(x => x.Key > 0).ToDictionary(x => x.Value.Role, x => x.Value),
          InternalGameState = state,
          Resources = Resources,
          CurrentSequence = CurrentSequence
@@ -69,7 +69,10 @@ public class Game
         _config = config;
 
         RoomCode = GenerateInviteCode();
+
         Group = hubContext.Clients.Group(RoomCode);
+
+        _lobby.WaitingGames[RoomCode] = this;
 
         for (var i = 0; i < config.MaxPlayersPerGame; i++)
         {
@@ -115,6 +118,7 @@ public class Game
         await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
         await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage(new MessageModel($"The controller has joined game {RoomCode}", Color.DarkGreen));
+
         await CheckAndSendState();
 
         return true;
@@ -148,6 +152,7 @@ public class Game
             await _hubContext.Groups.AddToGroupAsync(connectionId, RoomCode);
 
             await _hubContext.Clients.GroupExcept(RoomCode, connectionId).WriteMessage(new MessageModel($"A new player joined game {RoomCode}", Color.Green));
+
             await CheckAndSendState();
 
             var waitingForPlayers = true;

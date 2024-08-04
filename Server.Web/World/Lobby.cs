@@ -31,8 +31,6 @@ public class Lobby(IServiceProvider serviceProvider)
 
         LinkGameToPlayer(hubCallerContext, game);
 
-        await game.CheckAndSendState();
-
         return game.ConnectionToId[hubCallerContext.ConnectionId];
     }
 
