@@ -30,11 +30,13 @@ public class Game
 
     public GameState state = GameState.Lobby;
 
+    public float LinearDecrease = 0;
+
     public StateModel StateModel => new ()
     {
          InternalRoles = IdToPlayer.Where(x => x.Key > 0).ToDictionary(x => x.Value.Role, x => x.Value),
          InternalGameState = state,
-         Resources = Resources,
+         Resources = new SendResourceModel(Resources),
          CurrentSequence = CurrentSequence
     };
 
@@ -221,10 +223,12 @@ public class Game
     {
         var game = (Game) obj;
 
-        game.Resources.Water--;
-        game.Resources.Fuel--;
-        game.Resources.Electricity--;
-        game.Resources.Oxygen--;
+        game.Resources.Water -= 1 + game.LinearDecrease;
+        game.Resources.Fuel -= 1 + game.LinearDecrease;
+        game.Resources.Electricity -= 1 + game.LinearDecrease;
+        game.Resources.Oxygen -= 1 + game.LinearDecrease;
+
+        game.LinearDecrease += .05f;
 
         await game.CheckAndSendState();
     }
@@ -248,7 +252,7 @@ public class Game
 
     public async Task EndGame()
     {
-        await Group.WriteMessage(new MessageModel("Game has been completed!", Color.Gold));
+        await Group.WriteMessage(new MessageModel("Game has ended! It looks like the spaceship went <b>boom!</b>", Color.LightSalmon));
 
         await Group.GameEnd();
 

@@ -32,5 +32,5 @@ public class StateModel
         set => throw new ArgumentException("Cannot set roles via JSON deserialization!");
     }
 
-    public ResourcesModel Resources { get; set; }
+    public SendResourceModel Resources { get; set; }
 }

@@ -1,28 +1,14 @@
 ﻿namespace Server.Web.Models;
-public class ResourcesModel
+public class SendResourceModel
 {
-    public int Oxygen { get; set; } = UpperBounds;
-    public int Electricity { get; set; } = UpperBounds;
-    public int Fuel { get; set; } = UpperBounds;
-    public int Water { get; set; } = UpperBounds;
+    private readonly ResourcesModel _model;
 
-    public const int UpperBounds = 100;
+    public SendResourceModel(ResourcesModel model) => _model = model;
 
-    public bool Depleated() =>
-        Oxygen <= 0 || Electricity <= 0 || Fuel <= 0 || Water <= 0;
+    public SendResourceModel() { }
 
-    public void EnsureBounds()
-    {
-        if (Oxygen > UpperBounds)
-            Oxygen = UpperBounds;
-
-        if (Fuel > UpperBounds)
-            Fuel = UpperBounds;
-
-        if (Water > UpperBounds)
-            Water = UpperBounds;
-
-        if (Electricity > UpperBounds)
-            Electricity = UpperBounds;
-    }
+    public int Oxygen { get => (int)Math.Floor(_model.Oxygen); set => _model.Oxygen = value; }
+    public int Electricity { get => (int)Math.Floor(_model.Electricity); set => _model.Electricity = value; }
+    public int Fuel { get => (int)Math.Floor(_model.Fuel); set => _model.Fuel = value; }
+    public int Water { get => (int)Math.Floor(_model.Water); set => _model.Water = value; }
 }
