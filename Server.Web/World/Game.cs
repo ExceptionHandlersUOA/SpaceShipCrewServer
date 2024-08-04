@@ -235,7 +235,7 @@ public class Game
 
     public async Task CheckAndSendState()
     {
-        if (Resources.Depleated())
+        if (Resources.Depleated() && state != GameState.GameOver)
         {
             await EndGame();
 
