@@ -223,12 +223,12 @@ public class Game
     {
         var game = (Game) obj;
 
-        game.Resources.Water -= 1 + game.LinearDecrease;
-        game.Resources.Fuel -= 1 + game.LinearDecrease;
-        game.Resources.Electricity -= 1 + game.LinearDecrease;
-        game.Resources.Oxygen -= 1 + game.LinearDecrease;
+        game.Resources.Water -= .5f + game.LinearDecrease;
+        game.Resources.Fuel -= .5f + game.LinearDecrease;
+        game.Resources.Electricity -= .5f + game.LinearDecrease;
+        game.Resources.Oxygen -= .5f + game.LinearDecrease;
 
-        game.LinearDecrease += .025f;
+        game.LinearDecrease += .05f;
 
         await game.CheckAndSendState();
     }

@@ -23,8 +23,10 @@ public partial class GameHub
         switch(action)
         {
             case PlayerAction.CorrectFormula:
-                game.Resources.Fuel += game.CurrentSequence.Length * 3;
-                game.Resources.Water -= game.CurrentSequence.Length;
+                float fuelChange = game.CurrentSequence.Length * 3;
+
+                game.Resources.Fuel += fuelChange;
+                game.Resources.Water -= fuelChange / 3;
 
                 game.GenerateNewSequence();
 
@@ -34,8 +36,10 @@ public partial class GameHub
 
                 break;
             case PlayerAction.HarvestAsteroid:
-                game.Resources.Water += 10;
-                game.Resources.Electricity -= 5;
+                const float asteroidChange = 10;
+
+                game.Resources.Water += asteroidChange;
+                game.Resources.Electricity -= asteroidChange / 3;
 
                 await game.CheckAndSendState();
 
@@ -43,8 +47,10 @@ public partial class GameHub
 
                 break;
             case PlayerAction.MatchSine:
-                game.Resources.Electricity += 20;
-                game.Resources.Fuel -= 5;
+                const float sineChange = 20;
+
+                game.Resources.Electricity += sineChange;
+                game.Resources.Fuel -= sineChange / 3;
 
                 await game.Group.WriteMessage(new MessageModel($"The light of my life - {player.Username} - has generated <b>electricity</b>!", Color.Gold));
 
