@@ -19,7 +19,6 @@ public class ServerWorker : IHostedService
 {
     private readonly ILogger<ServerWorker> _logger;
     private readonly ServerHandler _serverHandler;
-    private readonly Thread _serverThread;
     private readonly EventSink _sink;
     private readonly TimerThread _timerThread;
     private readonly World _world;
@@ -40,18 +39,11 @@ public class ServerWorker : IHostedService
 
         var fileHandler = new ConsoleFileLogger("console.log", config);
         MultiConsoleOut = new MultiTextWriter(Console.Out, fileHandler);
-
-        _serverThread = new Thread(ServerLoopThread)
-        {
-            Name = "Server Thread",
-            CurrentCulture = CultureInfo.InvariantCulture
-        };
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _sink.InternalShutdown += OnClose;
-        _sink.ServerStarted += _ => _serverThread.Start();
 
         Thread.CurrentThread.Name = "Main Thread";
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -73,13 +65,13 @@ public class ServerWorker : IHostedService
         foreach (var module in _serverHandler.Modules)
             _logger.LogDebug("{ModuleInfo}", module.GetModuleInformation());
 
-        if (GetOsType.IsUnix())
+        if (GetTicks.IsLinux)
             _logger.LogWarning("Unix environment detected");
 
         var frameworkName = Assembly.GetEntryAssembly()?
             .GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName;
 
-        _logger.LogDebug("Compiled for {OS} and running on {NetVersion}", GetOsType.IsUnix() ? "UNIX " : "WINDOWS",
+        _logger.LogDebug("Compiled for {OS} and running on {NetVersion}", GetTicks.IsLinux ? "UNIX " : "WINDOWS",
             string.IsNullOrEmpty(frameworkName) ? "UNKNOWN" : frameworkName);
 
         if (GCSettings.IsServerGC)
@@ -95,23 +87,6 @@ public class ServerWorker : IHostedService
     {
         _serverHandler.HandleClosed();
         return Task.CompletedTask;
-    }
-
-    public void ServerLoopThread()
-    {
-        try
-        {
-            while (!_serverHandler.IsClosing)
-            {
-                _serverHandler.Signal.WaitOne();
-
-                _timerThread.Slice();
-            }
-        }
-        catch (Exception ex)
-        {
-            _serverHandler.UnhandledException(null, new UnhandledExceptionEventArgs(ex, true));
-        }
     }
 
     public void OnClose()

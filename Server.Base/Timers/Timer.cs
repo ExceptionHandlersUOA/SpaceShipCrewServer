@@ -21,7 +21,6 @@ public class Timer
     public long Interval;
     public List<Timer> List;
     public double Next;
-    public bool Queued;
 
     public TimerPriority Priority
     {

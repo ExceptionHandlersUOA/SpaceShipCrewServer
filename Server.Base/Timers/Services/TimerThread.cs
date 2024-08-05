@@ -17,7 +17,6 @@ public class TimerThread : IService
     private readonly ServerHandler _handler;
     private readonly double[] _nextPriorities;
     private readonly TimerChangePool _pool;
-    private readonly Queue<Timer> _queue;
     private readonly AutoResetEvent _signal;
     private readonly EventSink _sink;
     private readonly List<Timer>[] _timers;
@@ -32,7 +31,6 @@ public class TimerThread : IService
         _sink = sink;
         _handler = handler;
         _changed = [];
-        _queue = new Queue<Timer>();
         _signal = new AutoResetEvent(false);
         _world = world;
         _fileLogger = fileLogger;
@@ -101,31 +99,6 @@ public class TimerThread : IService
         }
     }
 
-    public void Slice()
-    {
-        lock (_queue)
-        {
-            var index = 0;
-
-            while (index < _config.BreakCount && _queue.Count != 0)
-            {
-                var timer = _queue.Dequeue();
-
-                try
-                {
-                    timer.OnTick();
-                }
-                catch (Exception ex)
-                {
-                    _fileLogger.WriteGenericLog<TimerThread>("timer-errors", $"Timer {timer.Index}", ex.ToString(), LoggerType.Error);
-                }
-
-                timer.Queued = false;
-                index++;
-            }
-        }
-    }
-
     public void RunTimer()
     {
         while (!_handler.IsClosing)
@@ -138,8 +111,6 @@ public class TimerThread : IService
 
             ProcessChanged();
 
-            var loaded = false;
-
             var now = GetTicks.TickCount;
 
             for (var i = 0; i < _timers.Length; i++)
@@ -149,14 +120,16 @@ public class TimerThread : IService
 
                 _nextPriorities[i] = now + _config.Delays[i];
 
-                foreach (var timer in _timers[i].Where(timer => !timer.Queued && !(now <= timer.Next)))
+                foreach (var timer in _timers[i].Where(timer => !(now <= timer.Next)))
                 {
-                    timer.Queued = true;
-
-                    lock (_queue)
-                        _queue.Enqueue(timer);
-
-                    loaded = true;
+                    try
+                    {
+                        timer.OnTick();
+                    }
+                    catch (Exception ex)
+                    {
+                        _fileLogger.WriteGenericLog<TimerThread>("timer-errors", $"Timer {timer.Index}", ex.ToString(), LoggerType.Error);
+                    }
 
                     if (timer.Count != 0 && ++timer.Index >= timer.Count)
                         timer.Stop();
@@ -164,9 +137,6 @@ public class TimerThread : IService
                         timer.Next = now + timer.Interval;
                 }
             }
-
-            if (loaded)
-                _handler.Set();
 
             _signal.WaitOne(100, false);
         }

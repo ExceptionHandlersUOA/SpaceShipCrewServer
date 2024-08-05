@@ -5,65 +5,41 @@ using Server.Base.Core.Models;
 using Server.Base.Timers.Extensions;
 using Server.Base.Timers.Services;
 using Server.Base.Worlds;
-using System.Globalization;
 using static Server.Base.Core.Models.ConsoleCommand;
 
 namespace Server.Base.Core.Services;
 
-public class ServerConsole : IService
+public class ServerConsole(TimerThread timerThread, ServerHandler handler, ILogger<ServerConsole> logger, World world, EventSink sink) : IService
 {
-    private readonly Dictionary<string, ConsoleCommand> _commands;
-    private readonly Thread _consoleThread;
-    private readonly ServerHandler _handler;
-    private readonly ILogger<ServerConsole> _logger;
-    private readonly TimerThread _timerThread;
-    private readonly World _world;
-    private readonly EventSink _sink;
+    private readonly Dictionary<string, ConsoleCommand> _commands = [];
 
-    public ServerConsole(TimerThread timerThread, ServerHandler handler, ILogger<ServerConsole> logger, World world, EventSink sink)
-    {
-        _timerThread = timerThread;
-        _handler = handler;
-        _logger = logger;
-        _world = world;
-        _sink = sink;
-
-        _commands = [];
-
-        _consoleThread = new Thread(ConsoleLoopThread)
-        {
-            Name = "Console Thread",
-            CurrentCulture = CultureInfo.InvariantCulture
-        };
-    }
-
-    public void Initialize() => _sink.ServerStarted += (_) => RunConsoleListener();
+    public void Initialize() => sink.ServerStarted += (_) => RunConsoleListener();
 
     public void RunConsoleListener()
     {
-        _logger.LogDebug("Setting up console commands");
+        logger.LogDebug("Setting up console commands");
 
         AddCommand(
             "shutdown",
             "Performs a forced save then shuts down the app.",
-            _ => _handler.KillServer()
+            _ => handler.KillServer()
         );
 
         AddCommand(
             "save",
             "Saves configuration files.",
-            _ => _world.Save(true)
+            _ => world.Save(true)
         );
 
         AddCommand(
             "crash",
             "Forces an exception to be thrown.",
-            _ => _timerThread.DelayCall((object _) => throw new Exception("Forced Crash"), null)
+            _ => timerThread.DelayCall((object _) => throw new Exception("Forced Crash"), null)
         );
 
         DisplayHelp();
 
-        _consoleThread.Start();
+        timerThread.DelayCall((_) => ProcessCommand(Console.ReadLine()), null, TimeSpan.FromSeconds(0), TimeSpan.FromMilliseconds(50), 0);
     }
 
     public void AddCommand(string name, string description, RunConsoleCommand commandMethod, bool strictCheck = false) =>
@@ -79,7 +55,7 @@ public class ServerConsole : IService
     {
         try
         {
-            while (!_handler.IsClosing && !_handler.HasCrashed)
+            while (!handler.IsClosing && !handler.HasCrashed)
                 ProcessCommand(Console.ReadLine());
         }
         catch (IOException)
@@ -90,7 +66,7 @@ public class ServerConsole : IService
 
     private void ProcessCommand(string input)
     {
-        if (_handler.IsClosing || _handler.HasCrashed)
+        if (handler.IsClosing || handler.HasCrashed)
             return;
 
         if (!string.IsNullOrEmpty(input))
@@ -101,14 +77,14 @@ public class ServerConsole : IService
             if (name != null && _commands.TryGetValue(name, out var value))
             {
                 value.CommandMethod(inputs);
-                _logger.LogInformation("Successfully ran command '{Name}'", name);
+                logger.LogInformation("Successfully ran command '{Name}'", name);
             }
         }
     }
 
     public void DisplayHelp()
     {
-        _logger.LogInformation("Commands:");
+        logger.LogInformation("Commands:");
 
         var commands = _commands.Values
             .OrderBy(x => x.Name)
@@ -116,8 +92,8 @@ public class ServerConsole : IService
 
         if (commands.Length != 0)
             foreach (var command in commands)
-                _logger.LogInformation("  {Name} - {Description}", command.Name, command.Description);
+                logger.LogInformation("  {Name} - {Description}", command.Name, command.Description);
         else
-            _logger.LogError("Could not find any commands!");
+            logger.LogError("Could not find any commands!");
     }
 }

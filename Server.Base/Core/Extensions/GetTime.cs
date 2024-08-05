@@ -8,17 +8,4 @@ public static class GetTime
 
         return $"{now.Day}-{now.Month}-{now.Year}-{now.Hour}-{now.Minute}-{now.Second}";
     }
-
-    public static TimeSpan ToTimeSpan(string value)
-    {
-        _ = TimeSpan.TryParse(value, out var timeSpan);
-
-        return timeSpan;
-    }
-
-    public static long ToUnixTimestamp(this DateTime time) =>
-        (long)time.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalSeconds;
-
-    public static long GetCurrentUnixMilliseconds() =>
-        (long)DateTime.UtcNow.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
 }
