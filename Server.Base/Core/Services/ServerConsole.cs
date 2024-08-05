@@ -44,15 +44,9 @@ public class ServerConsole : IService
         _logger.LogDebug("Setting up console commands");
 
         AddCommand(
-            "restart",
-            "Informs players of server restart, performs a forced save, then restarts the server.",
-            _ => _handler.KillServer(true)
-        );
-
-        AddCommand(
             "shutdown",
             "Performs a forced save then shuts down the app.",
-            _ => _handler.KillServer(false)
+            _ => _handler.KillServer()
         );
 
         AddCommand(

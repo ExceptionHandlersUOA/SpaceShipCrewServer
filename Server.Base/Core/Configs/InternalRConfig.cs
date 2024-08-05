@@ -15,8 +15,6 @@ public class InternalRConfig : IRConfig
 
     public double DisconnectionTimeout { get; }
 
-    public bool RestartOnCrash { get; }
-
     public InternalRConfig()
     {
         CrashDirectory = InternalDirectory.GetDirectory("Crashed");
@@ -28,7 +26,5 @@ public class InternalRConfig : IRConfig
         DisconnectionTimeout = 100000;
 
         ServerShutdownMessage = "Server is shutting down!";
-
-        RestartOnCrash = false;
     }
 }

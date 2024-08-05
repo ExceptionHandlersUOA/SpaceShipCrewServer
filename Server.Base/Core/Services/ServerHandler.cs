@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Server.Base.Core.Abstractions;
 using Server.Base.Core.Events;
 using Server.Base.Core.Events.Arguments;
-using Server.Base.Core.Extensions;
 using System.Diagnostics;
 
 namespace Server.Base.Core.Services;
@@ -57,15 +56,12 @@ public class ServerHandler(EventSink sink, ILogger<ServerHandler> logger, IHostA
             Console.ReadLine();
         }
 
-        KillServer(false);
+        KillServer();
     }
 
-    public void KillServer(bool restart)
+    public void KillServer()
     {
         HandleClosed();
-
-        if (restart)
-            Process.Start(GetExePath.Path());
 
         Process.GetCurrentProcess().Kill();
     }

@@ -22,26 +22,6 @@ public class CrashGuard(ILogger<CrashGuard> logger, EventSink sink,
         GenerateCrashReport(e);
 
         world.Save(false);
-
-        if (config.RestartOnCrash)
-            Restart(e);
-    }
-
-    private void Restart(CrashedEventArgs e)
-    {
-        logger.LogDebug("Restarting...");
-
-        try
-        {
-            Process.Start(GetExePath.Path());
-            logger.LogInformation("Successfully restarted!");
-
-            e.Close = true;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to restart server");
-        }
     }
 
     private void GenerateCrashReport(CrashedEventArgs crashedEventArgs)
