@@ -140,10 +140,10 @@ public class TimerThread : IService
 
             var loaded = false;
 
+            var now = GetTicks.TickCount;
+
             for (var i = 0; i < _timers.Length; i++)
             {
-                var now = GetTicks.TickCount;
-
                 if (now < _nextPriorities[i])
                     break;
 
