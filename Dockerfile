@@ -2,7 +2,6 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 
 COPY ./ ./
 
-RUN dotnet restore
 RUN dotnet publish -c Release -o ./bin
 
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:8.0
