@@ -132,7 +132,7 @@ public class TimerThread : IService
         {
             if (_world.Loading || _world.Saving)
             {
-                _signal.WaitOne(1, false);
+                _signal.WaitOne(100, false);
                 continue;
             }
 
@@ -168,7 +168,7 @@ public class TimerThread : IService
             if (loaded)
                 _handler.Set();
 
-            _signal.WaitOne(1, false);
+            _signal.WaitOne(100, false);
         }
     }
 }
