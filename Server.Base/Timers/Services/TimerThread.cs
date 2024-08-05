@@ -138,7 +138,7 @@ public class TimerThread : IService
                 }
             }
 
-            _signal.WaitOne(100, false);
+            _signal.WaitOne(50, false);
         }
     }
 }
