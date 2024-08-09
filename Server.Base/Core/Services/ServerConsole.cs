@@ -78,7 +78,16 @@ public class ServerConsole : IService
         try
         {
             while (!handler.IsClosing && !handler.HasCrashed)
-                ProcessCommand(Console.ReadLine());
+            {
+                var input = Console.ReadLine();
+
+                if (input != null)
+                {
+                    ProcessCommand(input);
+                }
+
+                Thread.Sleep(100);
+            }
         }
         catch (IOException)
         {
