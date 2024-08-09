@@ -20,21 +20,13 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
     public override void AddServices(IServiceCollection services, Module[] modules)
     {
         services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-        services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
         services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>(); ;
 
         services.AddSignalR();
 
         services.AddSingleton<Lobby>();
         services.AddTransient<Game>();
-    }
-
-    public override void ConfigureServices(ConfigurationManager configuration, IServiceCollection services)
-    {
-        services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimiting"));
-        services.Configure<IpRateLimitPolicies>(configuration.GetSection("IpRateLimitPolicies"));
     }
 
     public override void InitializeWeb(WebApplicationBuilder builder)
@@ -65,14 +57,12 @@ public class Web(ILogger<Web> logger) : WebModule(logger)
         app.MapHub<GameHub>("/hub");
 
         app.UseCors(config =>
-            config.SetIsOriginAllowedToAllowWildcardSubdomains()
-                .WithOrigins("https://*.feroxfoxxo.com", "http://localhost:3000")
+            config
+                .WithOrigins("https://hackathon.feroxfoxxo.com", "https://space.feroxfoxxo.com", "http://localhost:3000")
                 .AllowAnyMethod()
                 .AllowCredentials()
                 .AllowAnyHeader()
                 .Build()
         );
-
-        app.UseIpRateLimiting();
     }
 }
